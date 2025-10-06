@@ -2,6 +2,8 @@ import streamlit as st
 import torch
 from torch import nn
 import json
+import requests
+import os
 
 # --- Load model classes (import from your training code) ---
 from model import EncoderBiLSTM, DecoderWithAttention, Seq2Seq, PAD_IDX, SOS_IDX, EOS_IDX
@@ -31,6 +33,17 @@ def decode_roman(ids, itos):
         toks.append(itos.get(int(i), "<unk>"))
     return " ".join(toks)
 
+# --- Download model weights from Google Drive if not present ---
+MODEL_PATH = "best_model_weights.pt"
+DRIVE_ID = "1HJxyuPssBQWbRXXrV3JS1I-78NCYinqi"
+DRIVE_URL = f"https://drive.google.com/uc?id={DRIVE_ID}"
+
+if not os.path.exists(MODEL_PATH):
+    st.info("📦 Downloading model weights from Google Drive...")
+    r = requests.get(DRIVE_URL)
+    open(MODEL_PATH, "wb").write(r.content)
+    st.success("✅ Model downloaded successfully!")
+
 # --- Load trained model ---
 INPUT_DIM = len(urdu_vocab)
 OUTPUT_DIM = len(roman_vocab)
@@ -39,9 +52,8 @@ encoder = EncoderBiLSTM(INPUT_DIM, 256, 512, n_layers=2, dropout=0.3, pad_idx=PA
 decoder = DecoderWithAttention(OUTPUT_DIM, 256, 512, n_layers=4, dropout=0.3, pad_idx=PAD_IDX)
 model = Seq2Seq(encoder, decoder, device).to(device)
 
-state_dict = torch.load("best_model_weights.pt", map_location=device)
+state_dict = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(state_dict)
-
 model.eval()
 
 # --- Streamlit UI ---
