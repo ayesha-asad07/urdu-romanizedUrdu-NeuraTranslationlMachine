@@ -39,8 +39,9 @@ encoder = EncoderBiLSTM(INPUT_DIM, 256, 512, n_layers=2, dropout=0.3, pad_idx=PA
 decoder = DecoderWithAttention(OUTPUT_DIM, 256, 512, n_layers=4, dropout=0.3, pad_idx=PAD_IDX)
 model = Seq2Seq(encoder, decoder, device).to(device)
 
-checkpoint = torch.load("best_checkpoint.pt", map_location=device)
-model.load_state_dict(checkpoint["model_state"])
+state_dict = torch.load("best_model_weights.pt", map_location=device)
+model.load_state_dict(state_dict)
+
 model.eval()
 
 # --- Streamlit UI ---
