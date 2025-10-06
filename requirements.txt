@@ -1,0 +1,10 @@
+streamlit
+torch
+torchvision
+torchaudio
+tqdm
+sacrebleu
+sentencepiece
+transformers
+numpy
+pandas
