@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# PyTorch checkpoints
+*.pt
+*.pth
+*.ckpt
+
+# Datasets & processed files
+dataset/
+*.json
+*.txt
+*.csv
+
+# Tokenizer vocab files
+*.vocab
+*.model
+
+# Logs and outputs
+logs/
+runs/
+outputs/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Streamlit cache
+.streamlit/
