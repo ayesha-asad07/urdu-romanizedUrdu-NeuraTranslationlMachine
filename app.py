@@ -2,8 +2,8 @@ import streamlit as st
 import torch
 from torch import nn
 import json
-import requests
 import os
+import requests
 
 # --- Load model classes (import from your training code) ---
 from model import EncoderBiLSTM, DecoderWithAttention, Seq2Seq, PAD_IDX, SOS_IDX, EOS_IDX
@@ -33,16 +33,22 @@ def decode_roman(ids, itos):
         toks.append(itos.get(int(i), "<unk>"))
     return " ".join(toks)
 
-# --- Download model weights from Google Drive if not present ---
-MODEL_PATH = "best_model_weights.pt"
-DRIVE_ID = "1HJxyuPssBQWbRXXrV3JS1I-78NCYinqi"
-DRIVE_URL = f"https://drive.google.com/uc?id={DRIVE_ID}"
-
-if not os.path.exists(MODEL_PATH):
-    st.info("📦 Downloading model weights from Google Drive...")
-    r = requests.get(DRIVE_URL)
-    open(MODEL_PATH, "wb").write(r.content)
-    st.success("✅ Model downloaded successfully!")
+# --- Helper: download from Google Drive safely ---
+def download_file_from_google_drive(file_id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = None
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            token = value
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(32768):
+            if chunk:
+                f.write(chunk)
 
 # --- Load trained model ---
 INPUT_DIM = len(urdu_vocab)
@@ -52,7 +58,21 @@ encoder = EncoderBiLSTM(INPUT_DIM, 256, 512, n_layers=2, dropout=0.3, pad_idx=PA
 decoder = DecoderWithAttention(OUTPUT_DIM, 256, 512, n_layers=4, dropout=0.3, pad_idx=PAD_IDX)
 model = Seq2Seq(encoder, decoder, device).to(device)
 
-state_dict = torch.load(MODEL_PATH, map_location=device)
+# --- Download model weights if not present ---
+MODEL_PATH = "best_model_weights.pt"
+DRIVE_ID = "1HJxyuPssBQWbRXXrV3JS1I-78NCYinqi"  # your Google Drive file ID
+
+if not os.path.exists(MODEL_PATH):
+    st.info("📦 Downloading model weights from Google Drive...")
+    download_file_from_google_drive(DRIVE_ID, MODEL_PATH)
+    st.success("✅ Model downloaded successfully!")
+
+# --- Load checkpoint safely ---
+checkpoint = torch.load(MODEL_PATH, map_location=device)
+if "model_state" in checkpoint:
+    state_dict = checkpoint["model_state"]
+else:
+    state_dict = checkpoint
 model.load_state_dict(state_dict)
 model.eval()
 
