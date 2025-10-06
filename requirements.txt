@@ -1,10 +1,26 @@
-streamlit
+# --- Core ML Framework ---
 torch
 torchvision
 torchaudio
+
+# --- Data processing & utilities ---
+numpy
+pandas
 tqdm
+jsonlines
+matplotlib
+
+# --- NLP & tokenization ---
 sacrebleu
 sentencepiece
 transformers
-numpy
-pandas
+
+# --- Deep learning optimizers/schedulers ---
+accelerate
+scikit-learn
+
+# --- Streamlit app ---
+streamlit
+
+# --- Environment safety ---
+protobuf==4.25.3
