@@ -2,27 +2,35 @@ import streamlit as st
 import torch
 from torch import nn
 import json
+from train import EncoderBiLSTM, Decoder, Seq2Seq, PAD_IDX, SOS_IDX, EOS_IDX
 import os
-import requests
+import gdown
 
-# --- Load model classes (import from your training code) ---
-from model import EncoderBiLSTM, DecoderWithAttention, Seq2Seq, PAD_IDX, SOS_IDX, EOS_IDX
+# Google Drive file ID for your model
+DRIVE_FILE_ID = "19xXRPYqg8tD6dgPRZAsG6X5PEyiUH92a"   # <-- replace with your actual ID
+MODEL_PATH = "best_checkpoint.pt"
+
+# Check if model exists locally, if not, download it
+if not os.path.exists(MODEL_PATH):
+    print("Downloading best_checkpoint.pt from Google Drive...")
+    gdown.download(f"https://drive.google.com/uc?id={DRIVE_FILE_ID}", MODEL_PATH, quiet=False)
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# --- Load vocabularies ---
-with open("urdu_bpe.vocab", "r", encoding="utf-8") as f:
-    urdu_vocab = [line.strip().split()[0] for line in f.readlines()]
-with open("roman_wp-vocab.txt", "r", encoding="utf-8") as f:
-    roman_vocab = [line.strip().split()[0] for line in f.readlines()]
+# --- Load vocabularies (JSONs) to convert coming input into tokens ---
+with open("source_vocab.json", "r", encoding="utf-8") as f:
+    src_vocab = json.load(f)["char_to_idx"]
+with open("target_vocab.json", "r", encoding="utf-8") as f:
+    trg_vocab = json.load(f)["char_to_idx"]
 
-urdu_stoi = {tok: i for i, tok in enumerate(urdu_vocab)}
-roman_itos = {i: tok for i, tok in enumerate(roman_vocab)}
+# Build inverse maps
+src_stoi = src_vocab
+trg_itos = {v: k for k, v in trg_vocab.items()}
 
-# --- Define inference helpers ---
-def encode_urdu(sentence, stoi, sos_idx, eos_idx):
-    tokens = sentence.strip().split()
-    ids = [sos_idx] + [stoi.get(tok, stoi.get("<unk>", 3)) for tok in tokens] + [eos_idx]
+# --- Encode/Decode helpers ---
+def encode_urdu(text, vocab, sos_idx, eos_idx):
+    ids = [sos_idx] + [vocab.get(ch, 3) for ch in text] + [eos_idx]
     return torch.tensor(ids, dtype=torch.long).unsqueeze(0)
 
 def decode_roman(ids, itos):
@@ -30,50 +38,20 @@ def decode_roman(ids, itos):
     for i in ids:
         if i in [PAD_IDX, SOS_IDX, EOS_IDX]:
             continue
-        toks.append(itos.get(int(i), "<unk>"))
-    return " ".join(toks)
-
-# --- Helper: download from Google Drive safely ---
-def download_file_from_google_drive(file_id, destination):
-    URL = "https://docs.google.com/uc?export=download"
-    session = requests.Session()
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = None
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            token = value
-    if token:
-        params = {'id': file_id, 'confirm': token}
-        response = session.get(URL, params=params, stream=True)
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(32768):
-            if chunk:
-                f.write(chunk)
+        toks.append(itos.get(int(i), "<UNK>"))
+    return "".join(toks).strip()
 
 # --- Load trained model ---
-INPUT_DIM = len(urdu_vocab)
-OUTPUT_DIM = len(roman_vocab)
+INPUT_DIM = len(src_vocab)
+OUTPUT_DIM = len(trg_vocab)
 
 encoder = EncoderBiLSTM(INPUT_DIM, 256, 512, n_layers=2, dropout=0.3, pad_idx=PAD_IDX)
-decoder = DecoderWithAttention(OUTPUT_DIM, 256, 512, n_layers=4, dropout=0.3, pad_idx=PAD_IDX)
+decoder = Decoder(OUTPUT_DIM, 256, 512, n_layers=4, dropout=0.3, pad_idx=PAD_IDX)
 model = Seq2Seq(encoder, decoder, device).to(device)
 
-# --- Download model weights if not present ---
-MODEL_PATH = "best_model_weights.pt"
-DRIVE_ID = "1HJxyuPssBQWbRXXrV3JS1I-78NCYinqi"  # your Google Drive file ID
 
-if not os.path.exists(MODEL_PATH):
-    st.info("📦 Downloading model weights from Google Drive...")
-    download_file_from_google_drive(DRIVE_ID, MODEL_PATH)
-    st.success("✅ Model downloaded successfully!")
-
-# --- Load checkpoint safely ---
 checkpoint = torch.load(MODEL_PATH, map_location=device)
-if "model_state" in checkpoint:
-    state_dict = checkpoint["model_state"]
-else:
-    state_dict = checkpoint
-model.load_state_dict(state_dict)
+model.load_state_dict(checkpoint["model_state"])
 model.eval()
 
 # --- Streamlit UI ---
@@ -84,11 +62,14 @@ input_text = st.text_area("Enter Urdu text:", height=150, placeholder="مثال 
 
 if st.button("Transliterate"):
     with st.spinner("Converting..."):
-        src = encode_urdu(input_text, urdu_stoi, SOS_IDX, EOS_IDX).to(device)
+        src = encode_urdu(input_text, src_stoi, SOS_IDX, EOS_IDX).to(device)
+        src_len = torch.tensor([src.size(1)], dtype=torch.long).to(device)
         with torch.no_grad():
-            outputs = model(src, torch.tensor([src.size(1)]).to(device), trg=None, teacher_forcing=0.0, max_len=60)
+            outputs = model(src, src_len, trg=None, teacher_forcing=0.0, max_len=100)
         pred_ids = outputs.argmax(-1).squeeze(0).cpu().tolist()
-        roman_text = decode_roman(pred_ids, roman_itos)
+        roman_text = decode_roman(pred_ids, trg_itos)
 
     st.subheader("Romanized Urdu Output:")
     st.success(roman_text)
+
+
