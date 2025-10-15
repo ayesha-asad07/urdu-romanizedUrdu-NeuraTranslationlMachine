@@ -22,7 +22,6 @@ env/
 
 # Datasets & processed files
 dataset/
-*.json
 *.txt
 *.csv 
 

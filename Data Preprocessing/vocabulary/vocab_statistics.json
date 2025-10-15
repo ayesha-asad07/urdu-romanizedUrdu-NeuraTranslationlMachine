@@ -1,0 +1,12 @@
+{
+  "source": {
+    "vocab_size": 54,
+    "total_chars": 718333,
+    "unique_chars": 50
+  },
+  "target": {
+    "vocab_size": 32,
+    "total_chars": 836948,
+    "unique_chars": 28
+  }
+}
