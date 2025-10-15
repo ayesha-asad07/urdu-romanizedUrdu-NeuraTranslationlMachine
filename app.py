@@ -9,19 +9,26 @@ import gdown
 # Google Drive file ID for your model
 DRIVE_FILE_ID = "19xXRPYqg8tD6dgPRZAsG6X5PEyiUH92a"   # <-- replace with your actual ID
 MODEL_PATH = "best_checkpoint.pt"
+FILES = {
+    "best_checkpoint.pt": "19xXRPYqg8tD6dgPRZAsG6X5PEyiUH92a",   
+    "source_vocab.json": "1THTxtUNYrEsbWpv-rgqy-zr2V0wD3eI5",               
+    "target_vocab.json": "1kZD17Y7e1PIl98rBYiVe_7SbjTGSqGFC",                
+    "roman_urdu.csv": "1RRoO3g-xb86f3mmPU_blnEpAW4d9Wjg2"                     
+}
 
-# Check if model exists locally, if not, download it
-if not os.path.exists(MODEL_PATH):
-    print("Downloading best_checkpoint.pt from Google Drive...")
-    gdown.download(f"https://drive.google.com/uc?id={DRIVE_FILE_ID}", MODEL_PATH, quiet=False)
 
+# Download any missing files
+for filename, file_id in FILES.items():
+    if not os.path.exists(filename):
+        print(f"Downloading {filename} from Google Drive...")
+        gdown.download(f"https://drive.google.com/uc?id={file_id}", filename, quiet=False)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # --- Load vocabularies (JSONs) to convert coming input into tokens ---
-with open("source_vocab.json", "r", encoding="utf-8") as f:
+with open( list(FILES.keys())[1], "r", encoding="utf-8") as f:
     src_vocab = json.load(f)["char_to_idx"]
-with open("target_vocab.json", "r", encoding="utf-8") as f:
+with open( list(FILES.keys())[2], "r", encoding="utf-8") as f:
     trg_vocab = json.load(f)["char_to_idx"]
 
 # Build inverse maps

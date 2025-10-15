@@ -24,7 +24,7 @@ env/
 dataset/
 *.json
 *.txt
-*.csv
+*.csv 
 
 # Tokenizer vocab files
 *.vocab
