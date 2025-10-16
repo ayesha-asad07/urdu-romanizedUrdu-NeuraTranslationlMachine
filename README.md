@@ -7,13 +7,11 @@ It uses **BPE tokenization** for Urdu and **WordPiece tokenization** for Roman U
 
 ## 🧠 Features
 - Urdu text normalization and cleaning  
-- BPE tokenization for Urdu (source)  
-- WordPiece tokenization for Roman Urdu (target)  
-- Encoder–Decoder model with BiLSTM and Attention  
+- Character Level Encoding for Urdu (source)  
+- Character Level Encoding for Roman Urdu (target)  
+- BiLSTM 2 layer Encoder, LSTM 4 layer Decoder 
 - Mixed-precision training (AMP)  
 - Training metrics: BLEU, CER, and Perplexity  
 - Streamlit interface for live Romanization
 
----
 
-## 📂 Folder Structure
