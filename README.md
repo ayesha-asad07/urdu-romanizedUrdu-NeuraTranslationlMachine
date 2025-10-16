@@ -1,4 +1,4 @@
-# Urdu to Roman Urdu Transliteration using Seq2Seq (BiLSTM Encder, LSTM Decoder)
+# Urdu to Roman Urdu Transliteration using Seq2Seq (BiLSTM Encoder, LSTM Decoder)
 
 This project translates **Urdu text** into **Roman Urdu** using a **sequence-to-sequence model**.  
 It uses **CLE tokenization** for Urdu and Roman Urdu.
