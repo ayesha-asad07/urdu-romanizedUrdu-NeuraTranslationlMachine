@@ -1,11 +1,11 @@
-# Urdu → Roman Urdu Translation using Seq2Seq (BiLSTM + Attention)
+# Urdu to Roman Urdu Transliteration using Seq2Seq (BiLSTM Encder, LSTM Decoder)
 
-This project translates **Urdu text** into **Roman Urdu** using a **sequence-to-sequence model with attention**.  
-It uses **BPE tokenization** for Urdu and **WordPiece tokenization** for Roman Urdu.
+This project translates **Urdu text** into **Roman Urdu** using a **sequence-to-sequence model**.  
+It uses **CLE tokenization** for Urdu and Roman Urdu.
 
 ---
 
-## 🧠 Features
+## Features
 - Urdu text normalization and cleaning  
 - Character Level Encoding for Urdu (source)  
 - Character Level Encoding for Roman Urdu (target)  
